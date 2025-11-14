@@ -1,115 +1,233 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Band Drive</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Band • Songs Übersicht</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #eee;
+    :root{
+      --bg:#0f0f10;
+      --card:#121214;
+      --accent:#c40000; /* Band-Farbe — anpassen */
+      --muted:#9aa0a6;
+      --text:#eee;
     }
-    header {
-      background: #c40000;
-      padding: 20px;
-      text-align: center;
-      font-size: 2rem;
-      letter-spacing: 2px;
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:linear-gradient(180deg,var(--bg),#070707);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
-    #fileList {
-      padding: 20px;
+    header{
+      padding:28px 20px;
+      background:linear-gradient(90deg,var(--accent),#8b0000);
+      color:white;
+      display:flex;
+      align-items:center;
+      gap:16px;
     }
-    .file-item {
-      padding: 10px;
-      background: #222;
-      margin-bottom: 10px;
-      border-radius: 6px;
+    header .logo{
+      width:56px;height:56px;border-radius:8px;background:#fff2;display:flex;align-items:center;justify-content:center;font-weight:700;
     }
-    #uploadArea {
-      padding: 20px;
-      text-align: center;
-      border: 2px dashed #555;
-      margin: 20px;
-      border-radius: 10px;
-    }
-    #uploadArea:hover {
-      background: #1a1a1a;
-    }
+    header h1{margin:0;font-size:1.25rem;letter-spacing:1px;}
+    main{max-width:980px;margin:28px auto;padding:0 18px;}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px #0008;}
+    table{width:100%;border-collapse:collapse;margin-top:12px;}
+    th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #0008;font-size:0.95rem}
+    th{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:0.7px}
+    a.folder-link{color:var(--text);text-decoration:none}
+    a.folder-link:hover{text-decoration:underline}
+    .muted{color:var(--muted);font-size:0.9rem}
+    .center{display:flex;align-items:center;gap:10px}
+    .loader{width:18px;height:18px;border-radius:50%;border:3px solid #fff2;border-top-color:var(--accent);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .error{color:#ff6b6b;background:#3a00006b;padding:10px;border-radius:6px;margin-top:12px}
+    footer{max-width:980px;margin:20px auto;color:var(--muted);font-size:0.85rem;padding:0 18px;}
+    @media (max-width:600px){th,td{padding:10px 6px}}
   </style>
 </head>
 <body>
-  <header>Band Drive</header>
+  <header>
+    <div class="logo">BD</div>
+    <h1 id="bandname">Deine Band — Songs</h1>
+  </header>
 
-  <div id="uploadArea">
-    <p>Datei hierher ziehen oder klicken zum Hochladen</p>
-    <input type="file" id="fileInput" style="display:none" />
-  </div>
+  <main>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div>
+          <div class="muted">Ordner im Verzeichnis</div>
+          <strong>songs/</strong>
+        </div>
 
-  <div id="fileList"></div>
+        <div class="center">
+          <div id="status" class="muted">Bereit</div>
+          <div id="loader" style="display:none" class="loader" title="Lädt"></div>
+        </div>
+      </div>
+
+      <div id="errorContainer"></div>
+
+      <table id="foldersTable" aria-live="polite">
+        <thead>
+          <tr><th>Ordner</th><th>Dateien</th><th>GitHub-Link</th></tr>
+        </thead>
+        <tbody id="foldersBody">
+          <tr><td colspan="3" class="muted">Noch keine Daten geladen.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer>
+    Tipp: Lege deine Song-Ordner unter `songs/` an (z. B. `songs/01-Demo`, `songs/02-Live`).<br>
+    Hinweis: Repo muss public sein, oder du fügst ein GitHub-PAT ein (siehe unten).
+  </footer>
 
   <script>
-    // === KONFIGURATION ===
-    const FOLDER_ID = "HIER_EURE_ORDNER_ID_EINFÜGEN"; // Google-Drive-Ordner-ID
-    const API_KEY = "HIER_API_KEY_EINFÜGEN";
-    const ACCESS_TOKEN = "HIER_ACCESS_TOKEN_EINFÜGEN"; // Für Upload nötig
+    /*************************************************************************
+     * KONFIGURATION — BITTE hier anpassen:
+     *
+     * owner: GitHub-Benutzername oder Organisation
+     * repo:  Repository-Name
+     * branch: Branch-Name (optional, default "main")
+     *
+     * Wenn das Repo privat ist: setze GITHUB_TOKEN auf ein Personal Access Token
+     * mit "repo" scope (Achtung: Token nicht in öffentlichen Repos abspeichern!)
+     *************************************************************************/
+    const CONFIG = {
+      owner: "DEIN_GITHUB_USERNAME",   // <-- anpassen
+      repo: "DEIN_REPO_NAME",          // <-- anpassen
+      branch: "main",                  // oder "master" — anpassen falls nötig
+      path: "songs",
+      GITHUB_TOKEN: ""                 // optional: "ghp_..."  (NICHT in öffentl. Repo eintragen)
+    };
 
-    // === DATEILISTE LADEN ===
-    async function loadFiles() {
-      const url = `https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&key=${API_KEY}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const list = document.getElementById("fileList");
-      list.innerHTML = "<h2>Dateien</h2>";
-      data.files.forEach(f => {
-        const item = document.createElement("div");
-        item.className = "file-item";
-        item.innerHTML = `<a href="https://drive.google.com/uc?id=${f.id}&export=download" target="_blank">${f.name}</a>`;
-        list.appendChild(item);
-      });
+    const statusEl = document.getElementById("status");
+    const loaderEl = document.getElementById("loader");
+    const foldersBody = document.getElementById("foldersBody");
+    const errorContainer = document.getElementById("errorContainer");
+
+    function setLoading(on, msg = "Lädt...") {
+      statusEl.textContent = on ? msg : "Fertig";
+      loaderEl.style.display = on ? "inline-block" : "none";
     }
 
-    // === UPLOAD ===
-    async function uploadFile(file) {
-      const metadata = {
-        name: file.name,
-        parents: [FOLDER_ID]
-      };
+    function showError(text) {
+      errorContainer.innerHTML = `<div class="error">${text}</div>`;
+    }
 
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", file);
+    async function apiFetch(url) {
+      const headers = { "Accept": "application/vnd.github.v3+json" };
+      if (CONFIG.GITHUB_TOKEN && CONFIG.GITHUB_TOKEN.length > 0) {
+        headers["Authorization"] = "token " + CONFIG.GITHUB_TOKEN;
+      }
+      const resp = await fetch(url, { headers });
+      if (!resp.ok) {
+        const txt = await resp.text();
+        const message = `GitHub API Fehler ${resp.status}: ${resp.statusText} — ${txt}`;
+        throw new Error(message);
+      }
+      return resp.json();
+    }
 
-      const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
-        body: form
-      });
+    async function loadSongFolders() {
+      setLoading(true, "Hole Ordnerliste...");
+      errorContainer.innerHTML = "";
+      foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Lädt Ordner...</td></tr>`;
 
-      if (res.ok) {
-        alert("Upload erfolgreich!");
-        loadFiles();
-      } else {
-        alert("Upload fehlgeschlagen");
+      const { owner, repo, branch, path } = CONFIG;
+      if (!owner || !repo) {
+        showError("Bitte in CONFIG owner und repo setzen (oben im Script).");
+        setLoading(false);
+        return;
+      }
+
+      // Build API URL to list contents of songs/
+      const refSegment = branch ? `?ref=${encodeURIComponent(branch)}` : "";
+      const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}${refSegment}`;
+
+      try {
+        const items = await apiFetch(apiUrl);
+
+        // When path doesn't exist, GitHub returns an object with message -> handle
+        if (!Array.isArray(items)) {
+          if (items && items.message) {
+            throw new Error(items.message);
+          } else {
+            throw new Error("Unerwartete Antwort von GitHub API.");
+          }
+        }
+
+        // Filter directories only
+        const dirs = items.filter(i => i.type === "dir");
+
+        if (dirs.length === 0) {
+          foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Keine Unterordner unter <code>/${path}</code> gefunden.</td></tr>`;
+          setLoading(false);
+          return;
+        }
+
+        // For each dir, fetch its contents to get file count (optional)
+        foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Hole Details für ${dirs.length} Ordner…</td></tr>`;
+
+        // Parallel requests (be mindful of rate limits if sehr viele Ordner)
+        const detailsPromises = dirs.map(async d => {
+          const dirApi = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}/${encodeURIComponent(d.name)}${refSegment}`;
+          try {
+            const c = await apiFetch(dirApi);
+            const fileCount = Array.isArray(c) ? c.filter(x => x.type === "file").length : 0;
+            return { name: d.name, files: fileCount };
+          } catch (err) {
+            // On error (e.g. rate limit), return unknown count
+            return { name: d.name, files: "?" };
+          }
+        });
+
+        const details = await Promise.all(detailsPromises);
+
+        // Build table rows
+        foldersBody.innerHTML = "";
+        details.sort((a,b)=> a.name.localeCompare(b.name, undefined, {numeric:true}));
+        details.forEach(d => {
+          const row = document.createElement("tr");
+          const nameCell = document.createElement("td");
+          const filesCell = document.createElement("td");
+          const linkCell = document.createElement("td");
+
+          const ghPath = `https://github.com/${owner}/${repo}/tree/${branch}/${path}/${encodeURIComponent(d.name)}`;
+
+          nameCell.innerHTML = `<strong>${escapeHtml(d.name)}</strong>`;
+          filesCell.textContent = d.files;
+          linkCell.innerHTML = `<a class="folder-link" href="${ghPath}" target="_blank" rel="noopener">Auf GitHub öffnen</a>`;
+
+          row.appendChild(nameCell);
+          row.appendChild(filesCell);
+          row.appendChild(linkCell);
+          foldersBody.appendChild(row);
+        });
+
+        setLoading(false, "Fertig");
+      } catch (err) {
+        showError("Fehler: " + escapeHtml(err.message));
+        foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Fehler beim Laden.</td></tr>`;
+        setLoading(false);
       }
     }
 
-    // === DRAG & DROP / KLICK ===
-    const uploadArea = document.getElementById("uploadArea");
-    const fileInput = document.getElementById("fileInput");
+    // small helper to avoid injecting HTML
+    function escapeHtml(s) {
+      if (!s) return "";
+      return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+    }
 
-    uploadArea.onclick = () => fileInput.click();
-    fileInput.onchange = () => uploadFile(fileInput.files[0]);
+    // Kick off
+    loadSongFolders();
 
-    uploadArea.ondrop = e => {
-      e.preventDefault();
-      uploadFile(e.dataTransfer.files[0]);
-    };
-    uploadArea.ondragover = e => e.preventDefault();
-
-    // Start
-    loadFiles();
+    // Optional: Refresh every 2 minutes (comment out if nicht gewünscht)
+    // setInterval(loadSongFolders, 120000);
   </script>
 </body>
 </html>
