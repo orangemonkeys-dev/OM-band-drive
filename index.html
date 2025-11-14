@@ -11,6 +11,29 @@
       --status-laeuft: #2e7d32; --status-geplant: #1565c0;
       --status-backlog: #8e24aa; --status-new: #f57c00;
     }
+    .top-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      height: 60px;
+      width: auto;
+      border-radius: 6px;
+      background: #1a1d2e;
+      padding: 4px;
+    }
+    .title-block h1 {
+      font-size: 22px;
+      margin: 0;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 4px 0 0;
+    }
     body { font-family: system-ui, Segoe UI, Roboto, Arial; background: var(--bg); color: var(--fg); margin: 0; }
     header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
     h1 { font-size: 20px; margin: 0; }
@@ -33,9 +56,14 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>Songliste <span class="count" id="count"></span></h1>
+  <header class="top-header">
+    <img src="MonkeysDesign/Monkey@Chris.jpg" alt="Bandlogo" class="logo">
+    <div class="title-block">
+      <h1>Songliste</h1>
+      <p class="subtitle">Bandprojekt · Übersicht aller Songs</p>
+    </div>
   </header>
+
 
   <section class="controls">
     <input id="search" type="search" placeholder="Suche: Songname oder Interpret" aria-label="Suche">
