@@ -66,7 +66,8 @@
       </div>
 
       <div id="errorContainer"></div>
-
+      
+      <!-- Erste Tabelle: songs -->
       <table id="foldersTable" aria-live="polite">
         <thead>
           <tr><th>Running songs</th><th>Leadsheet</th><th>Media</th></tr>
@@ -75,6 +76,15 @@
           <tr><td colspan="3" class="muted">Noch keine Daten geladen.</td></tr>
         </tbody>
       </table>
+      <!-- Zweite Tabelle: songs-backlog -->
+      <table id="backlogTable" aria-live="polite" style="margin-top:24px">
+        <thead>
+          <tr><th>Backlog Songs</th><th>Leadsheet (PDF)</th><th>Media</th></tr>
+        </thead>
+        <tbody id="backlogBody">
+          <tr><td colspan="3" class="muted">Noch keine Daten geladen.</td></tr>
+        </tbody>
+      </table>      
     </div>
   </main>
 
