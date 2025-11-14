@@ -1,61 +1,190 @@
-async function loadFolders(path, bodyId, title) {
-  const { owner, repo, branch } = CONFIG;
-  const refSegment = branch ? `?ref=${encodeURIComponent(branch)}` : "";
-  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}${refSegment}`;
-  const bodyEl = document.getElementById(bodyId);
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Band • Songs Übersicht</title>
+  <style>
+    :root{
+      --bg:#0f0f10;
+      --card:#121214;
+      --accent:#c40000;
+      --muted:#9aa0a6;
+      --text:#eee;
+    }
+    body{
+      margin:0;
+      font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:linear-gradient(180deg,var(--bg),#070707);
+      color:var(--text);
+    }
+    header{
+      padding:28px 20px;
+      background:linear-gradient(90deg,var(--accent),#8b0000);
+      color:white;
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    header .logo{
+      width:56px;height:56px;border-radius:8px;background:#fff2;
+      display:flex;align-items:center;justify-content:center;font-weight:700;
+    }
+    header h1{margin:0;font-size:1.25rem;letter-spacing:1px;}
+    main{max-width:980px;margin:28px auto;padding:0 18px;}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px #0008;}
+    table{width:100%;border-collapse:collapse;margin-top:12px;}
+    th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #0008;font-size:0.95rem}
+    th{font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:0.7px}
+    a.folder-link{color:var(--text);text-decoration:none}
+    a.folder-link:hover{text-decoration:underline}
+    .muted{color:var(--muted);font-size:0.9rem}
+    .center{display:flex;align-items:center;gap:10px}
+    .loader{width:18px;height:18px;border-radius:50%;border:3px solid #fff2;border-top-color:var(--accent);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .error{color:#ff6b6b;background:#3a00006b;padding:10px;border-radius:6px;margin-top:12px}
+    footer{max-width:980px;margin:20px auto;color:var(--muted);font-size:0.85rem;padding:0 18px;}
+    @media (max-width:600px){th,td{padding:10px 6px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <img src="MonkeysDesign/Monkey@Chris.jpg" alt="Band Logo" style="width:80px;height:80px;border-radius:8px;object-fit:cover;">
+    </div>
+    <h1 id="bandname">Orange Monkeys — Songlist</h1>
+  </header>
 
-  try {
-    const items = await apiFetch(apiUrl);
-    const dirs = Array.isArray(items) ? items.filter(i => i.type === "dir") : [];
-    if (dirs.length === 0) {
-      bodyEl.innerHTML = `<tr><td colspan="3" class="muted">Keine Unterordner unter <code>/${path}</code> gefunden.</td></tr>`;
-      return;
+  <main>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div class="center">
+          <div id="status" class="muted">Bereit</div>
+          <div id="loader" style="display:none" class="loader" title="Lädt"></div>
+        </div>
+      </div>
+
+      <div id="errorContainer"></div>
+
+      <!-- Erste Tabelle: songs -->
+      <table id="foldersTable" aria-live="polite">
+        <thead>
+          <tr><th>Running Songs</th><th>Leadsheet (PDF)</th><th>Media</th></tr>
+        </thead>
+        <tbody id="foldersBody">
+          <tr><td colspan="3" class="muted">Noch keine Daten geladen.</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Zweite Tabelle: songs-backlog -->
+      <table id="backlogTable" aria-live="polite" style="margin-top:24px">
+        <thead>
+          <tr><th>Backlog Songs</th><th>Leadsheet (PDF)</th><th>Media</th></tr>
+        </thead>
+        <tbody id="backlogBody">
+          <tr><td colspan="3" class="muted">Noch keine Daten geladen.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer>
+    Tipp: Immer schön langsam üben!
+  </footer>
+
+  <script>
+    const CONFIG = {
+      owner: "MAS6969",
+      repo: "OM-band-drive",
+      branch: "main",
+      GITHUB_TOKEN: ""
+    };
+
+    const statusEl = document.getElementById("status");
+    const loaderEl = document.getElementById("loader");
+    const errorContainer = document.getElementById("errorContainer");
+
+    function setLoading(on, msg = "Lädt...") {
+      statusEl.textContent = on ? msg : "Bereit";
+      loaderEl.style.display = on ? "inline-block" : "none";
     }
 
-    const detailsPromises = dirs.map(async d => {
-      const dirApi = `https://api.github.com/repos/${owner}/${repo}/contents/${path}/${d.name}${refSegment}`;
+    function showError(text) {
+      errorContainer.innerHTML = `<div class="error">${text}</div>`;
+    }
+
+    async function apiFetch(url) {
+      const headers = { "Accept": "application/vnd.github.v3+json" };
+      if (CONFIG.GITHUB_TOKEN && CONFIG.GITHUB_TOKEN.length > 0) {
+        headers["Authorization"] = "token " + CONFIG.GITHUB_TOKEN;
+      }
+      const resp = await fetch(url, { headers });
+      if (!resp.ok) {
+        const txt = await resp.text();
+        throw new Error(`GitHub API Fehler ${resp.status}: ${resp.statusText} — ${txt}`);
+      }
+      return resp.json();
+    }
+
+    async function loadFolders(path, bodyId) {
+      const { owner, repo, branch } = CONFIG;
+      const refSegment = branch ? `?ref=${encodeURIComponent(branch)}` : "";
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}${refSegment}`;
+      const bodyEl = document.getElementById(bodyId);
+
       try {
-        const c = await apiFetch(dirApi);
-        const pdfs = Array.isArray(c) ? c.filter(x => x.type === "file" && x.name.toLowerCase().endsWith(".pdf")) : [];
-        return { name: d.name, pdfs };
-      } catch {
-        return { name: d.name, pdfs: [] };
+        const items = await apiFetch(apiUrl);
+        const dirs = Array.isArray(items) ? items.filter(i => i.type === "dir") : [];
+        if (dirs.length === 0) {
+          bodyEl.innerHTML = `<tr><td colspan="3" class="muted">Keine Unterordner unter <code>/${path}</code> gefunden.</td></tr>`;
+          return;
+        }
+
+        const detailsPromises = dirs.map(async d => {
+          const dirApi = `https://api.github.com/repos/${owner}/${repo}/contents/${path}/${d.name}${refSegment}`;
+          try {
+            const c = await apiFetch(dirApi);
+            const pdfs = Array.isArray(c) ? c.filter(x => x.type === "file" && x.name.toLowerCase().endsWith(".pdf")) : [];
+            return { name: d.name, pdfs };
+          } catch {
+            return { name: d.name, pdfs: [] };
+          }
+        });
+
+        const details = await Promise.all(detailsPromises);
+        bodyEl.innerHTML = "";
+        details.sort((a,b)=> a.name.localeCompare(b.name, undefined, {numeric:true}));
+
+        details.forEach(d => {
+          const row = document.createElement("tr");
+
+          const nameCell = document.createElement("td");
+          nameCell.innerHTML = `<strong>${escapeHtml(d.name)}</strong>`;
+
+          const pdfCell = document.createElement("td");
+          if (d.pdfs.length > 0) {
+            pdfCell.innerHTML = d.pdfs.map(pdf => {
+              const blobUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${path}/${encodeURIComponent(d.name)}/${encodeURIComponent(pdf.name)}`;
+              return `<a class="folder-link" href="${blobUrl}" target="_blank" rel="noopener">${escapeHtml(pdf.name)}</a>`;
+            }).join("<br>");
+          } else {
+            pdfCell.innerHTML = `<span class="muted">Keine PDF-Datei</span>`;
+          }
+
+          const linkCell = document.createElement("td");
+          const ghPath = `https://github.com/${owner}/${repo}/tree/${branch}/${path}/${encodeURIComponent(d.name)}`;
+          linkCell.innerHTML = `<a class="folder-link" href="${ghPath}" target="_blank" rel="noopener">Auf GitHub öffnen</a>`;
+
+          row.appendChild(nameCell);
+          row.appendChild(pdfCell);
+          row.appendChild(linkCell);
+          bodyEl.appendChild(row);
+        });
+      } catch (err) {
+        bodyEl.innerHTML = `<tr><td colspan="3" class="muted">Fehler beim Laden (${escapeHtml(err.message)}).</td></tr>`;
       }
-    });
+    }
 
-    const details = await Promise.all(detailsPromises);
-    bodyEl.innerHTML = "";
-    details.sort((a,b)=> a.name.localeCompare(b.name, undefined, {numeric:true}));
-
-    details.forEach(d => {
-      const row = document.createElement("tr");
-      const nameCell = document.createElement("td");
-      nameCell.innerHTML = `<strong>${escapeHtml(d.name)}</strong>`;
-
-      const pdfCell = document.createElement("td");
-      if (d.pdfs.length > 0) {
-        pdfCell.innerHTML = d.pdfs.map(pdf => {
-          const blobUrl = `https://github.com/${owner}/${repo}/blob/${branch}/${path}/${encodeURIComponent(d.name)}/${encodeURIComponent(pdf.name)}`;
-          return `<a class="folder-link" href="${blobUrl}" target="_blank" rel="noopener">${escapeHtml(pdf.name)}</a>`;
-        }).join("<br>");
-      } else {
-        pdfCell.innerHTML = `<span class="muted">Keine PDF-Datei</span>`;
-      }
-
-      const linkCell = document.createElement("td");
-      const ghPath = `https://github.com/${owner}/${repo}/tree/${branch}/${path}/${encodeURIComponent(d.name)}`;
-      linkCell.innerHTML = `<a class="folder-link" href="${ghPath}" target="_blank" rel="noopener">Auf GitHub öffnen</a>`;
-
-      row.appendChild(nameCell);
-      row.appendChild(pdfCell);
-      row.appendChild(linkCell);
-      bodyEl.appendChild(row);
-    });
-  } catch (err) {
-    bodyEl.innerHTML = `<tr><td colspan="3" class="muted">Fehler beim Laden (${escapeHtml(err.message)}).</td></tr>`;
-  }
-}
-
-// Start beide Tabellen laden
-loadFolders("songs", "foldersBody");
-loadFolders("songs-backlog", "backlogBody");
+    function escapeHtml(s) {
+      if (!s) return "";
+      return s.replace(/[&<>"']/g, c => ({'&':'&
