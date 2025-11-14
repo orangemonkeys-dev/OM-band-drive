@@ -36,7 +36,7 @@
     .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 6px 20px #0008;}
     table{width:100%;border-collapse:collapse;margin-top:12px;}
     th,td{padding:12px 10px;text-align:left;border-bottom:1px solid #0008;font-size:0.95rem}
-    th{color:var(--);font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:0.7px}
+    th{font-weight:600;text-transform:uppercase;font-size:0.75rem;letter-spacing:0.7px}
     a.folder-link{color:var(--text);text-decoration:none}
     a.folder-link:hover{text-decoration:underline}
     .muted{color:var(--muted);font-size:0.9rem}
@@ -50,13 +50,11 @@
 </head>
 <body>
   <header>
-  <!-- Logo -->
-  <div class="logo">
-    <img src="MonkeysDesign/Monkey@Chris.jpg" alt="Band Logo" style="width:80px;height:80px;border-radius:8px;object-fit:cover;">
-  </div>
-  <!-- Bandname -->
-  <h1 id="bandname">Orange Monkeys — Songlist</h1>
-</header>
+    <div class="logo">
+      <img src="MonkeysDesign/Monkey@Chris.jpg" alt="Band Logo" style="width:80px;height:80px;border-radius:8px;object-fit:cover;">
+    </div>
+    <h1 id="bandname">Orange Monkeys — Songlist</h1>
+  </header>
 
   <main>
     <div class="card">
@@ -71,7 +69,7 @@
 
       <table id="foldersTable" aria-live="polite">
         <thead>
-          <tr><th>running songs</th><th>Leadsheet</th><th>Media</th></tr>
+          <tr><th>Running Songs</th><th>Leadsheet (PDF)</th><th>Media</th></tr>
         </thead>
         <tbody id="foldersBody">
           <tr><td colspan="3" class="muted">Noch keine Daten geladen.</td></tr>
@@ -85,22 +83,12 @@
   </footer>
 
   <script>
-    /*************************************************************************
-     * KONFIGURATION — BITTE hier anpassen:
-     *
-     * owner: GitHub-Benutzername oder Organisation
-     * repo:  Repository-Name
-     * branch: Branch-Name (optional, default "main")
-     *
-     * Wenn das Repo privat ist: setze GITHUB_TOKEN auf ein Personal Access Token
-     * mit "repo" scope (Achtung: Token nicht in öffentlichen Repos abspeichern!)
-     *************************************************************************/
     const CONFIG = {
-      owner: "MAS6969",   // <-- anpassen
-      repo: "OM-band-drive",          // <-- anpassen
-      branch: "main",                  // oder "master" — anpassen falls nötig
+      owner: "MAS6969",
+      repo: "OM-band-drive",
+      branch: "main",
       path: "songs",
-      GITHUB_TOKEN: ""                 // optional: "ghp_..."  (NICHT in öffentl. Repo eintragen)
+      GITHUB_TOKEN: ""
     };
 
     const statusEl = document.getElementById("status");
@@ -109,7 +97,7 @@
     const errorContainer = document.getElementById("errorContainer");
 
     function setLoading(on, msg = "Lädt...") {
-      statusEl.textContent = on ? msg : "none";
+      statusEl.textContent = on ? msg : "Bereit";
       loaderEl.style.display = on ? "inline-block" : "none";
     }
 
@@ -125,8 +113,7 @@
       const resp = await fetch(url, { headers });
       if (!resp.ok) {
         const txt = await resp.text();
-        const message = `GitHub API Fehler ${resp.status}: ${resp.statusText} — ${txt}`;
-        throw new Error(message);
+        throw new Error(`GitHub API Fehler ${resp.status}: ${resp.statusText} — ${txt}`);
       }
       return resp.json();
     }
@@ -137,95 +124,36 @@
       foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Lädt Ordner...</td></tr>`;
 
       const { owner, repo, branch, path } = CONFIG;
-      if (!owner || !repo) {
-        showError("Bitte in CONFIG owner und repo setzen (oben im Script).");
-        setLoading(false);
-        return;
-      }
-
-      // Build API URL to list contents of songs/
       const refSegment = branch ? `?ref=${encodeURIComponent(branch)}` : "";
-      const apiUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}${refSegment}`;
+      const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}${refSegment}`;
 
       try {
         const items = await apiFetch(apiUrl);
+        if (!Array.isArray(items)) throw new Error("Unerwartete Antwort von GitHub API.");
 
-        // When path doesn't exist, GitHub returns an object with message -> handle
-        if (!Array.isArray(items)) {
-          if (items && items.message) {
-            throw new Error(items.message);
-          } else {
-            throw new Error("Unerwartete Antwort von GitHub API.");
-          }
-        }
-
-        // Filter directories only
         const dirs = items.filter(i => i.type === "dir");
-
         if (dirs.length === 0) {
-          foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Keine Unterordner unter <code>/${path}</code> gefunden.</td></tr>`;
+          foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Keine Unterordner gefunden.</td></tr>`;
           setLoading(false);
           return;
         }
 
-        // For each dir, fetch its contents to get file count (optional)
-        foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Hole Details für ${dirs.length} Ordner…</td></tr>`;
-
-        // Parallel requests (be mindful of rate limits if sehr viele Ordner)
         const detailsPromises = dirs.map(async d => {
-          const dirApi = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodeURIComponent(path)}/${encodeURIComponent(d.name)}${refSegment}`;
+          const dirApi = `https://api.github.com/repos/${owner}/${repo}/contents/${path}/${d.name}${refSegment}`;
           try {
             const c = await apiFetch(dirApi);
-            const fileCount = Array.isArray(c) ? c.filter(x => x.type === "file").length : 0;
-            return { name: d.name, files: fileCount };
-          } catch (err) {
-            // On error (e.g. rate limit), return unknown count
-            return { name: d.name, files: "?" };
+            const pdfs = Array.isArray(c) ? c.filter(x => x.type === "file" && x.name.toLowerCase().endsWith(".pdf")) : [];
+            return { name: d.name, pdfs };
+          } catch {
+            return { name: d.name, pdfs: [] };
           }
         });
 
         const details = await Promise.all(detailsPromises);
-
-        // Build table rows
         foldersBody.innerHTML = "";
         details.sort((a,b)=> a.name.localeCompare(b.name, undefined, {numeric:true}));
+
         details.forEach(d => {
           const row = document.createElement("tr");
-          const nameCell = document.createElement("td");
-          const filesCell = document.createElement("td");
-          const linkCell = document.createElement("td");
 
-          const ghPath = `https://github.com/${owner}/${repo}/tree/${branch}/${path}/${encodeURIComponent(d.name)}`;
-
-          nameCell.innerHTML = `<strong>${escapeHtml(d.name)}</strong>`;
-          filesCell.textContent = d.files;
-          linkCell.innerHTML = `<a class="folder-link" href="${ghPath}" target="_blank" rel="noopener">Auf GitHub öffnen</a>`;
-
-          row.appendChild(nameCell);
-          row.appendChild(filesCell);
-          row.appendChild(linkCell);
-          foldersBody.appendChild(row);
-        });
-
-        setLoading(false, "Fertig");
-      } catch (err) {
-        showError("Fehler: " + escapeHtml(err.message));
-        foldersBody.innerHTML = `<tr><td colspan="3" class="muted">Fehler beim Laden.</td></tr>`;
-        setLoading(false);
-      }
-    }
-
-    // small helper to avoid injecting HTML
-    function escapeHtml(s) {
-      if (!s) return "";
-      return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
-    }
-
-    // Kick off
-    loadSongFolders();
-
-    // Optional: Refresh every 2 minutes (comment out if nicht gewünscht)
-    // setInterval(loadSongFolders, 120000);
-  </script>
-</body>
-</html>
+          const nameCell = document.create
