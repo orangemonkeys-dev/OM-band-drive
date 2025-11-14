@@ -69,7 +69,7 @@
 
       <table id="foldersTable" aria-live="polite">
         <thead>
-          <tr><th>Running songs</th><th>Leadsheet (PDF)</th><th>Media</th></tr>
+          <tr><th>Running songs</th><th>Leadsheet</th><th>Media</th></tr>
         </thead>
         <tbody id="foldersBody">
           <tr><td colspan="3" class="muted">Noch keine Daten geladen.</td></tr>
@@ -199,7 +199,7 @@
               return `<a class="folder-link" href="${blobUrl}" target="_blank" rel="noopener">${escapeHtml(pdf.name)}</a>`;
             }).join("<br>");
           } else {
-            pdfCell.innerHTML = `<span class="muted">Keine PDF-Datei</span>`;
+            pdfCell.innerHTML = `<span class="muted">kein Leadsheet vorhanden</span>`;
           }
 
           // Spalte 3: Link zum Ordner
