@@ -78,9 +78,9 @@
       <thead>
         <tr>
           <th data-key="Songname">Songname</th>
-          <th data-key="Interpret">Interpret</th>
-          <th data-key="Leadsheetbezeichnung">Leadsheet</th>
+          <th data-key="Interpret">Interpret</th>         
           <th data-key="Spielstatus">Status</th>
+          <th data-key="Leadsheet">Leadsheet</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -137,9 +137,9 @@
         const badge = s ? `<span class="badge ${badgeClass}">${row.Spielstatus}</span>` : '<span class="empty">—</span>';
         return `<tr>
           <td>${escapeHtml(row.Songname || '')}</td>
-          <td>${escapeHtml(row.Interpret || '')}</td>
-          <td>${ls}</td>
+          <td>${escapeHtml(row.Interpret || '')}</td>          
           <td>${badge}</td>
+          <td>${ls}</td>
         </tr>`;
       }).join('');
 
