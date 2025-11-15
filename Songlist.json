@@ -4,21 +4,24 @@
     "Interpret": "Arctic Monkeys",
     "Leadsheetbezeichnung": "none",
     "Spielstatus": "läuft"
-    "Spielzeit": "2,5 min."    
+    "Spielzeit": " x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Dancing in the Dark",
     "Interpret": "Bruce Springsteen",
     "Leadsheetbezeichnung": "",
     "Spielstatus": "geplant"
-    "Spielzeit": "x min."    
+    "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Everglow",
     "Interpret": "Coldplay",
     "Leadsheetbezeichnung": "",
     "Spielstatus": "new"
-    "Spielzeit": "x min."    
+    "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "The Scientist",
@@ -26,6 +29,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "new"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Drops of Jupiter",
@@ -33,6 +37,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "backlog"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Boulevard Of Broken Dreams",
@@ -40,6 +45,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "läuft"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Use somebody",
@@ -47,6 +53,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "backlog"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Narcotic",
@@ -54,6 +61,7 @@
     "Leadsheetbezeichnung": "Liquido - Narcotic (Lead- & Textsheet).pdf",
     "Spielstatus": "läuft"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Don't Look Back In Anger",
@@ -61,6 +69,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "new"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Supersonic",
@@ -68,6 +77,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "läuft"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Supergirl",
@@ -75,6 +85,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "new"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Californication",
@@ -82,6 +93,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "läuft"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Can't Stop",
@@ -89,6 +101,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "backlog"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Otherside",
@@ -96,6 +109,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "läuft"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Feel",
@@ -103,6 +117,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "new"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Run",
@@ -110,6 +125,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "backlog"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Its been a while",
@@ -117,6 +133,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "läuft"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Rock & Roll Queen",
@@ -124,6 +141,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "läuft"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Seven Nation Army",
@@ -131,13 +149,7 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "läuft"
     "Spielzeit": "x min."
-  },
-  {
-    "Songname": "NoName",
-    "Interpret": "NoName",
-    "Leadsheetbezeichnung": "",
-    "Spielstatus": "backlog"
-    "Spielzeit": "x min."
+    "Bandprobe": "x"
   },
   {
     "Songname": "Bitch",
@@ -145,7 +157,9 @@
     "Leadsheetbezeichnung": "",
     "Spielstatus": "new"
     "Spielzeit": "x min."
+    "Bandprobe": "x"
   }
 ]
+
 
 
