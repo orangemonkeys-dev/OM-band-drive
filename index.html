@@ -112,7 +112,7 @@
       })
       .then(json => { data = json; render(); })
       .catch(err => {
-        tbody.innerHTML = `<tr><td colspan="6">Fehler beim Laden: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6">Fehler beim Laden: ${escapeHtml(err.message)}</td></tr>`;
       });
 
     function render() {
@@ -167,6 +167,15 @@
           sortKey = key;
           sortDir = 1;
         }
-      render();
+        render();
+      });
     });
-  });
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+      })[s]);
+    }
+  </script>
+</body>
+</html>
