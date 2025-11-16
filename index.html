@@ -80,9 +80,9 @@
           <th data-key="Songname">Songname</th>
           <th data-key="Interpret">Interpret</th>
           <th data-key="Spielstatus">Status</th>
-          <th data-key="Leadsheetbezeichnung">Leadsheet</th>
+          <th data-key="Bandprobe">Bandprobe</th>          
           <th data-key="Spielzeit">Spielzeit</th>
-          <th data-key="Bandprobe">Bandprobe</th>
+          <th data-key="Leadsheetbezeichnung">Leadsheet</th>
       </tr>
       </thead>
       <tbody></tbody>
@@ -95,7 +95,7 @@
 
   <script>
     const jsonPath = 'Songlist.json'; // JSON-Datei im gleichen Verzeichnis
-    let data = [], sortKey = 'Bandprobe', sortDir = 1;
+    let data = [], sortKey = 'Bandprobe', sortDir = 0;
 
     const tbody = document.querySelector('#table tbody');
     const countEl = document.getElementById('count');
@@ -144,9 +144,9 @@
       <td>${escapeHtml(row.Songname || '')}</td>
       <td>${escapeHtml(row.Interpret || '')}</td>
       <td>${badge}</td>
-      <td>${ls}</td>
+      <td>${bandprobe}</td>      
       <td>${spielzeit}</td>
-      <td>${bandprobe}</td>
+      <td>${ls}</td>
     </tr>`;
   }).join('');
 
