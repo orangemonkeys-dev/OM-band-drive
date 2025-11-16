@@ -159,4 +159,14 @@
     statusEl.addEventListener('change', render);
 
     ths.forEach(th => {
-      th.add
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (sortKey === key) {
+          sortDir *= -1;
+        } else {
+          sortKey = key;
+          sortDir = 1;
+        }
+      render();
+    });
+  });
