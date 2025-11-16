@@ -78,10 +78,12 @@
       <thead>
         <tr>
           <th data-key="Songname">Songname</th>
-          <th data-key="Interpret">Interpret</th>         
+          <th data-key="Interpret">Interpret</th>
           <th data-key="Spielstatus">Status</th>
-          <th data-key="Leadsheet">Leadsheet</th>
-        </tr>
+          <th data-key="Leadsheetbezeichnung">Leadsheet</th>
+          <th data-key="Spielzeit">Spielzeit</th>
+          <th data-key="Bandprobe">Bandprobe</th>
+      </tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -111,40 +113,46 @@
         tbody.innerHTML = `<tr><td colspan="4">Fehler beim Laden: ${err.message}</td></tr>`;
       });
 
-    function render() {
-      const q = (searchEl.value || '').toLowerCase();
-      const st = statusEl.value || '';
-      const filtered = data.filter(row => {
-        const text = (row.Songname + ' ' + row.Interpret).toLowerCase();
-        const statusOk = !st || (row.Spielstatus || '').toLowerCase() === st.toLowerCase();
-        return (!q || text.includes(q)) && statusOk;
-      });
+  function render() {
+  const q = (searchEl.value || '').toLowerCase();
+  const st = statusEl.value || '';
+  const filtered = data.filter(row => {
+    const text = (row.Songname + ' ' + row.Interpret).toLowerCase();
+    const statusOk = !st || (row.Spielstatus || '').toLowerCase() === st.toLowerCase();
+    return (!q || text.includes(q)) && statusOk;
+  });
 
-      const sorted = filtered.slice().sort((a, b) => {
-        const av = (a[sortKey] || '').toString().toLowerCase();
-        const bv = (b[sortKey] || '').toString().toLowerCase();
-        return av.localeCompare(bv, 'de') * sortDir;
-      });
+  const sorted = filtered.slice().sort((a, b) => {
+    const av = (a[sortKey] || '').toString().toLowerCase();
+    const bv = (b[sortKey] || '').toString().toLowerCase();
+    return av.localeCompare(bv, 'de') * sortDir;
+  });
 
-      tbody.innerHTML = sorted.map(row => {
-        const ls = row.Leadsheetbezeichnung && row.Leadsheetbezeichnung.trim() !== '' ? row.Leadsheetbezeichnung : '<span class="empty">—</span>';
-        const s = (row.Spielstatus || '').toLowerCase();
-        const badgeClass = s === 'läuft' ? 'b-laeuft'
-                          : s === 'geplant' ? 'b-geplant'
-                          : s === 'backlog' ? 'b-backlog'
-                          : s === 'new' ? 'b-new'
-                          : '';
-        const badge = s ? `<span class="badge ${badgeClass}">${row.Spielstatus}</span>` : '<span class="empty">—</span>';
-        return `<tr>
-          <td>${escapeHtml(row.Songname || '')}</td>
-          <td>${escapeHtml(row.Interpret || '')}</td>          
-          <td>${badge}</td>
-          <td>${ls}</td>
-        </tr>`;
-      }).join('');
+  tbody.innerHTML = sorted.map(row => {
+    const ls = row.Leadsheetbezeichnung && row.Leadsheetbezeichnung.trim() !== '' ? row.Leadsheetbezeichnung : '<span class="empty">—</span>';
+    const s = (row.Spielstatus || '').toLowerCase();
+    const badgeClass = s === 'läuft' ? 'b-laeuft'
+                      : s === 'geplant' ? 'b-geplant'
+                      : s === 'backlog' ? 'b-backlog'
+                      : s === 'new' ? 'b-new'
+                      : '';
+    const badge = s ? `<span class="badge ${badgeClass}">${row.Spielstatus}</span>` : '<span class="empty">—</span>';
+    const spielzeit = row.Spielzeit && row.Spielzeit.trim() !== '' ? escapeHtml(row.Spielzeit) : '<span class="empty">—</span>';
+    const bandprobe = row.Bandprobe && row.Bandprobe.trim() !== '' ? escapeHtml(row.Bandprobe) : '<span class="empty">—</span>';
 
-      countEl.textContent = `(${sorted.length} Einträge)`;
-    }
+    return `<tr>
+      <td>${escapeHtml(row.Songname || '')}</td>
+      <td>${escapeHtml(row.Interpret || '')}</td>
+      <td>${badge}</td>
+      <td>${ls}</td>
+      <td>${spielzeit}</td>
+      <td>${bandprobe}</td>
+    </tr>`;
+  }).join('');
+
+  countEl.textContent = `(${sorted.length} Einträge)`;
+}
+
 
     searchEl.addEventListener('input', render);
     statusEl.addEventListener('change', render);
