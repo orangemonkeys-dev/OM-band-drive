@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Songliste</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #0f1220; --fg: #e8eaf6; --muted: #b6b9d6;
+      --border: #2a2d43;
+    }
+    body { font-family: system-ui, Segoe UI, Roboto, Arial; background: var(--bg); color: var(--fg); margin: 0; }
+    .top-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .logo { height: 80px; width: auto; border-radius: 6px; background: #1a1d2e; padding: 4px; }
+    .title-block h1 { font-size: 22px; margin: 0; }
+    .subtitle { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+    .controls { display: flex; gap: 12px; padding: 12px 20px; flex-wrap: wrap; }
+    .controls input, .controls select { background: #151833; color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+    .table-wrap { padding: 0 20px 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    th { text-align: left; font-weight: 600; color: var(--muted); cursor: pointer; }
+    tr:hover { background: #141736; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .b-backlog { background:#8e24aa; color:#f3e5f5; }   /* lila */
+    .b-run1    { background:#d32f2f; color:#ffcdd2; }   /* rot */
+    .b-run2    { background:#fbc02d; color:#fff9c4; }   /* gelb */
+    .b-run3    { background:#2e7d32; color:#c8e6c9; }   /* grün */
+    .empty { color: var(--border); font-style: italic; }
+    .count { font-size: 13px; color: var(--muted); margin-left: 8px; }
+    footer { padding: 12px 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+    @media (max-width: 720px) { .hide-mobile { display: none; } }
+  </style>
+</head>
+<body>
+  <header class="top-header">
+    <img src="MonkeysDesign/Monkey@Chris.jpg" alt="Bandlogo" class="logo">
+    <div class="title-block">
+      <h1>Orange Monkeys - Songlist<span class="count" id="count"></span></h1>
+      <p class="subtitle">Bandprojekt · Übersicht aller Songs</p>
+    </div>
+  </header>
+
+  <section class="controls">
+    <input id="search" type="search" placeholder="Suche: Songname oder Interpret" aria-label="Suche">
+    <select id="status">
+      <option value="">Status: alle</option>
+      <option value="backlog">backlog</option>
+      <option value="run *">run *</option>
+      <option value="run **">run **</option>
+      <option value="run ***">run ***</option>
+    </select>
+  </section>
+
+  <section class="table-wrap">
+    <table id="table">
+      <thead>
+        <tr>
+          <th data-key="Songname">Songname</th>
+          <th data-key="Interpret">Interpret</th>
+          <th data-key="Spielstatus">Status</th>
+          <th data-key="Bandprobe">Bandprobe</th>
+          <th data-key="Spielzeit">Spielzeit</th>
+          <th data-key="Leadsheetbezeichnung" class="hide-mobile">Leadsheet</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <footer>
+    Copyright by OrangeMonkeys
+  </footer>
+
+  <script>
+    const jsonPath = 'Songlist.json';
+    let data = [], sortKey = 'Bandprobe', sortDir = -1;
+
+    const tbody = document.querySelector('#table tbody');
+    const countEl = document.getElementById('count');
+    const searchEl = document.getElementById('search');
+    const statusEl = document.getElementById('status');
+    const ths = document.querySelectorAll('th[data-key]');
+
+    fetch(jsonPath)
+      .then(r => {
+        if (!r.ok) throw new Error('JSON nicht gefunden: ' + jsonPath);
+        return r.json();
+      })
+      .then(json => { data = json; render(); })
+      .catch(err => {
+        tbody.innerHTML = `<tr><td colspan="6">Fehler beim Laden: ${escapeHtml(err.message)}</td></tr>`;
+      });
+
+    function render() {
+      const q = (searchEl.value || '').toLowerCase();
+      const st = statusEl.value || '';
+      const filtered = data.filter(row => {
+        const text = (row.Songname + ' ' + row.Interpret).toLowerCase();
+        const statusOk = !st || (row.Spielstatus || '').toLowerCase() === st.toLowerCase();
+        return (!q || text.includes(q)) && statusOk;
+      });
+
+      const sorted = filtered.slice().sort((a, b) => {
+        const av = (a[sortKey] || '').toString().toLowerCase();
+        const bv = (b[sortKey] || '').toString().toLowerCase();
+        return av.localeCompare(bv, 'de') * sortDir;
+      });
+
+      tbody.innerHTML = sorted.map(row => {
+        const ls = row.Leadsheetbezeichnung && row.Leadsheetbezeichnung.trim() !== '' 
+          ? escapeHtml(row.Leadsheetbezeichnung) 
+          : '<span class="empty">—</span>';
+
+        const sRaw = (row.Spielstatus || '').trim();
+        let s = '';
+        let badgeClass = '';
+
+        switch (sRaw) {
+          case 'backlog':
+            s = 'backlog'; badgeClass = 'b-backlog'; break;
+          case 'run *':
+            s = 'draft'; badgeClass = 'b-run1'; break;
+          case 'run **':
+            s = 'progress'; badgeClass = 'b-run2'; break;
+          case 'run ***':
+            s = 'stage ready'; badgeClass = 'b-run3'; break;
+          default:
+            s = sRaw; badgeClass = '';
+        }
+
+        const badge = s ? `<span class="badge ${badgeClass}">${escapeHtml(s)}</span>` : '<span class="empty">—</span>';
+        const spielzeit = row.Spielzeit && row.Spielzeit.trim() !== '' ? escapeHtml(row.Spielzeit) : '<span class="empty">—</span>';
+        const bandprobe = row.Bandprobe && row.Bandprobe.trim() !== '' ? escapeHtml(row.Bandprobe) : '<span class="empty">—</span>';
+
+        return `<tr>
+          <td>${escapeHtml(row.Songname || '')}</td>
+          <td>${escapeHtml(row.Interpret || '')}</td>
+          <td>${badge}</td>
+          <td>${bandprobe}</td>
+          <td>${spielzeit}</td>
+          <td class="hide-mobile">${ls}</td>
+        </tr>`;
+      }).join('');
+
+      countEl.textContent = `(${sorted.length} Einträge)`;
+    }
+
+    searchEl.addEventListener('input', render);
+    statusEl.addEventListener('change', render);
+
+    ths.forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (sortKey === key) {
+          sortDir *= -1;
+        } else {
+          sortKey = key;
+          sortDir = 1;
+        }
+        render();
+      });
+    });
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+      })[s]);
+    }
+  </script>
+</body>
+</html>
